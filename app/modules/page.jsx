@@ -120,13 +120,21 @@ function ModulesPageInner() {
     setDuplicateError(null);
 
     await withPreservedScroll(async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
       const { error } = await supabase
         .from("modules")
         .update({
           subject,
           description,
         })
-        .eq("id", mod.id);
+        .eq("id", mod.id)
+        // Defense-in-Depth: zusätzlich nach Owner filtern (RLS bleibt trotzdem Pflicht!)
+        .eq("user_id", user.id);
 
       if (!error) {
         setSaveStatus({ [mod.id]: "success" });
@@ -149,8 +157,19 @@ function ModulesPageInner() {
       setSaveStatus({});
       setShowUndo(true);
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       // wirklich löschen
-      await supabase.from("modules").delete().eq("id", mod.id);
+      if (user) {
+        await supabase
+          .from("modules")
+          .delete()
+          .eq("id", mod.id)
+          // Defense-in-Depth: zusätzlich nach Owner filtern
+          .eq("user_id", user.id);
+      }
 
       // Undo nach 5s automatisch weg
       setTimeout(() => {

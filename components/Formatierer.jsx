@@ -309,7 +309,9 @@ export default function Formatierer() {
         subject,
         description,
       })
-      .eq("id", editingModule.id);
+      .eq("id", editingModule.id)
+      // Defense-in-Depth: zusätzlich nach Owner filtern (RLS bleibt trotzdem Pflicht!)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Fehler beim Speichern des Moduls:", error);

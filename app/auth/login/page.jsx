@@ -1,15 +1,36 @@
 "use client";
 
-import { useState, useContext, Suspense } from "react";
+import { useMemo, useState, useContext, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SupabaseContext } from "../../../components/SupabaseProvider";
+
+function sanitizeRedirectPath(input) {
+  if (!input) return "/";
+  const value = String(input).trim();
+
+  // Nur relative Pfade innerhalb der App erlauben (Open-Redirect verhindern)
+  // - muss mit "/" beginnen
+  // - darf nicht mit "//" beginnen (schemaless URL)
+  // - darf kein Protokoll enthalten
+  if (!value.startsWith("/") || value.startsWith("//")) return "/";
+  if (value.includes("://")) return "/";
+
+  // Optional: sehr lange/kaputte Werte abfangen
+  if (value.length > 2048) return "/";
+
+  return value;
+}
 
 function LoginInner() {
   const supabase = useContext(SupabaseContext);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectedFrom = searchParams.get("redirectedFrom") || "/";
+  const redirectedFromRaw = searchParams.get("redirectedFrom");
+  const redirectedFrom = useMemo(
+    () => sanitizeRedirectPath(redirectedFromRaw),
+    [redirectedFromRaw]
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
