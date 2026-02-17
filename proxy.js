@@ -6,7 +6,10 @@ export async function proxy(req) {
   const res = NextResponse.next();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey =
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     console.error("[proxy] Fehlende ENV Variablen");
@@ -15,14 +18,16 @@ export async function proxy(req) {
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
-      get(name) {
-        return req.cookies.get(name)?.value;
+      // Wichtig: getAll/setAll verwenden (nicht get/set/remove),
+      // sonst werden bei großen Sessions nicht alle Cookie-Chunks gelesen
+      // und der Proxy "sieht" die Session nicht -> Redirect-Loop trotz Login.
+      getAll() {
+        return req.cookies.getAll();
       },
-      set(name, value, options) {
-        res.cookies.set(name, value, options);
-      },
-      remove(name, options) {
-        res.cookies.delete(name, options);
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          res.cookies.set(name, value, options);
+        });
       },
     },
   });

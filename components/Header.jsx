@@ -14,6 +14,8 @@ export default function Header() {
   useEffect(() => {
     let mounted = true;
 
+    if (!supabase) return () => {};
+
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session ?? null);
@@ -36,6 +38,7 @@ export default function Header() {
       : pathname.startsWith(href);
 
   const handleLogout = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     router.push("/auth/login");
   };
