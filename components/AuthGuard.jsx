@@ -13,6 +13,7 @@ export default function AuthGuard({ children }) {
     let mounted = true;
 
     async function check() {
+      if (!supabase) return;
       const { data } = await supabase.auth.getSession();
 
       if (!mounted) return;
@@ -25,6 +26,8 @@ export default function AuthGuard({ children }) {
     }
 
     check();
+
+    if (!supabase) return () => {};
 
     const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       if (!mounted) return;
