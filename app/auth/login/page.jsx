@@ -62,7 +62,13 @@ function LoginInner() {
       return;
     }
 
-    router.replace(redirectedFrom); // ← zurück zur gewünschten Seite
+    // WICHTIG: Vollständiger Seiten-Reload, damit
+    // der Proxy die frische Supabase-Session (Cookies) sicher sieht.
+    if (typeof window !== "undefined") {
+      window.location.href = redirectedFrom || "/";
+    } else {
+      router.replace(redirectedFrom || "/");
+    }
   };
 
   return (
