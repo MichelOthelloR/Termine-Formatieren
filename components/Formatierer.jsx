@@ -149,7 +149,6 @@ export default function Formatierer() {
       subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
 
       const { year, week } = getISOWeekData(date);
-
       const key = `${year}-KW${week}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(subject);
@@ -157,7 +156,17 @@ export default function Formatierer() {
 
     let out = "";
     Object.keys(groups)
-      .sort()
+      .sort((a, b) => {
+        const [yearA, weekA] = a.split("-KW");
+        const [yearB, weekB] = b.split("-KW");
+        const yA = Number(yearA) || 0;
+        const yB = Number(yearB) || 0;
+        const wA = Number(weekA) || 0;
+        const wB = Number(weekB) || 0;
+
+        if (yA !== yB) return yA - yB;
+        return wA - wB;
+      })
       .forEach((key) => {
         const kw = key.split("-")[1];
         out += kw + "\n";

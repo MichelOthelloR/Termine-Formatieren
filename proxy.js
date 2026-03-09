@@ -36,7 +36,15 @@ export async function proxy(req) {
   const isAuthRoute = pathname.startsWith("/auth");
 
   // Session prüfen (Cookie-basiert)
-  const { data: { session } } = await supabase.auth.getSession();
+  let session = null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    session = data?.session ?? null;
+  } catch (err) {
+    console.error("[proxy] Fehler bei getSession:", err);
+    // Bei Fehler (z.B. invalid refresh token) behandeln wir den Nutzer als nicht eingeloggt
+    session = null;
+  }
 
   // 1) Ungeloggt auf geschützten Seiten -> Login
   if (!session && !isAuthRoute) {
@@ -64,3 +72,4 @@ export const config = {
   // schützen: Startseite (Formatierer) & Module
   matcher: ["/", "/modules/:path*"],
 };
+
