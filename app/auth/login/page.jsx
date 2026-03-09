@@ -39,6 +39,10 @@ function LoginInner() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (!supabase) {
+      setErr("Login ist derzeit nicht möglich (Supabase nicht initialisiert). Bitte Seite neu laden.");
+      return;
+    }
     setBusy(true);
     setErr("");
 
@@ -50,7 +54,11 @@ function LoginInner() {
     setBusy(false);
 
     if (error) {
-      setErr(error.message);
+      let msg = error.message || "Login fehlgeschlagen.";
+      if (msg.toLowerCase().includes("invalid login credentials")) {
+        msg = "Ungültige E‑Mail oder Passwort.";
+      }
+      setErr(msg);
       return;
     }
 

@@ -19,6 +19,9 @@ export default function Formatierer() {
   const [outputFlash, setOutputFlash] = useState(false);
   const [outputInfo, setOutputInfo] = useState("");
 
+  // Zusammenfassung der Module (Subject + Häufigkeit) für die Begründungs-Seite
+  const [summary, setSummary] = useState(null);
+
   // Inline-Bearbeitung eines bestehenden Moduls (ähnlicher Betreff)
   const [editingModule, setEditingModule] = useState(null);
   const [editingError, setEditingError] = useState("");
@@ -126,11 +129,13 @@ export default function Formatierer() {
     if (!text.trim()) {
       setOutput("");
       setMissing([]);
+       setSummary(null);
       return;
     }
 
     const rows = text.split(/\r?\n/).filter((r) => r.trim());
     const groups = {};
+    const subjectCounts = {};
     const missingSet = new Set();
     const describedSubjects = new Set();
 
@@ -139,6 +144,10 @@ export default function Formatierer() {
       if (!parsed) return;
 
       const { date, subject } = parsed;
+
+      // Häufigkeit pro Subject mitzählen (für Begründungs-Seite)
+      subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+
       const { year, week } = getISOWeekData(date);
 
       const key = `${year}-KW${week}`;
@@ -174,6 +183,17 @@ export default function Formatierer() {
     setOutput(out);
     setMissing([...missingSet]);
 
+    // Zusammenfassung für die Begründungs-Seite vorbereiten
+    const summarySubjects = Object.entries(subjectCounts).map(
+      ([subject, count]) => ({
+        subject,
+        count,
+      })
+    );
+    setSummary(
+      summarySubjects.length > 0 ? { subjects: summarySubjects } : null
+    );
+
     try {
       navigator.clipboard.writeText(out);
     } catch (err) {
@@ -182,6 +202,17 @@ export default function Formatierer() {
   };
 
   const format = (text) => formatWithDb(text);
+
+  const goToReasons = () => {
+    if (!summary || !summary.subjects?.length) return;
+
+    try {
+      const payload = btoa(JSON.stringify(summary));
+      router.push(`/reasons?summary=${encodeURIComponent(payload)}`);
+    } catch (err) {
+      console.error("Konnte Daten für die Begründungs-Seite nicht kodieren", err);
+    }
+  };
 
   //
   // 4) NEUES MODULE SPEICHERN
@@ -433,6 +464,31 @@ export default function Formatierer() {
                 "background-color 150ms ease, border-color 150ms ease",
             }}
           />
+
+          {summary && summary.subjects?.length > 0 && (
+            <div
+              style={{
+                marginTop: 10,
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={goToReasons}
+                style={{
+                  background: "#6366f1",
+                  border: "none",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  color: "white",
+                  cursor: "pointer",
+                  fontSize: 13,
+                }}
+              >
+                Begründungen erzeugen
+              </button>
+            </div>
+          )}
 
           {outputInfo && (
             <div

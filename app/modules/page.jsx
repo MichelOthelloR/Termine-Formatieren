@@ -68,7 +68,7 @@ function ModulesPageInner() {
 
   useEffect(() => {
     loadModules();
-  }, []);
+  }, [supabase]);
 
   // Initial-Suche aus URL übernehmen (z.B. /modules?subject=...)
   useEffect(() => {

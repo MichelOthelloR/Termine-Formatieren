@@ -26,6 +26,17 @@ export default function RegisterPage() {
     setErr("");
     setMessage("");
 
+    if (!supabase) {
+      setErr("Registrierung ist derzeit nicht möglich (Supabase nicht initialisiert). Bitte Seite neu laden.");
+      return;
+    }
+
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setErr("Bitte eine gültige E‑Mail-Adresse eingeben.");
+      return;
+    }
+
     if (!isStrongPassword(password)) {
       setErr("Passwort zu schwach. Mindestens 12 Zeichen, eine Zahl und ein Sonderzeichen erforderlich.");
       return;
@@ -33,7 +44,7 @@ export default function RegisterPage() {
 
     setBusy(true);
     const { error } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
     });
     setBusy(false);
